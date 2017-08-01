@@ -4,7 +4,7 @@ services:
   ha:
     build: hass
     volumes:
-        - "..:/config"
+        - "./hass:/config"
     devices:
         - "/dev/zwave:/dev/zwave"
         - "/dev/bwio:/dev/bwio"
