@@ -1,0 +1,17 @@
+__pycache__
+secrets.yaml
+locksinterface.yaml
+emulated_hue_ids.json
+ozwconfig
+options.xml
+ssldata.tgz
+hidden
+sounds
+zwcfg_*.xml
+.ios.conf
+*.log
+*.db
+*.sqlite
+*.txt
+*.swp
+*.so

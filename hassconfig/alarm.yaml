@@ -1,0 +1,23 @@
+platform: bwalarm
+name: House
+pending_time: 30
+trigger_time: 600
+alarm: switch.Alarm
+warning: switch.Warning
+headsup:
+    - lock.Back_Door_Locked
+    - lock.Front_Door_Locked
+    - binary_sensor.Garage_Door
+immediate:
+    - binary_sensor.Bedroom_Slider
+delayed:
+    - binary_sensor.Front_Door
+    - binary_sensor.back_door
+    - binary_sensor.Primary_Motion
+    - binary_sensor.Dining_Room_Window
+    - binary_sensor.Little_Window
+    - binary_sensor.Living_Room_Window
+    - binary_sensor.Office_Window
+    - binary_sensor.Patio_Slider
+notathome:
+    - binary_sensor.Primary_Motion

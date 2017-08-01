@@ -1,0 +1,70 @@
+
+- alias: Garage door toggle
+  trigger:
+    platform: state
+    entity_id: switch.garage_door
+    to: 'on'
+    for: 
+      milliseconds: 100
+  action:
+    service: switch.turn_off
+    entity_id: switch.garage_door
+
+- alias: Hot water cycle toggle
+  trigger:
+    platform: state
+    entity_id: switch.hot_water_switch
+    to: 'on'
+    for: 
+      minutes: 5 
+  action:
+    service: switch.turn_off
+    entity_id: switch.hot_water_switch
+    
+- alias: Turn external lights on before sunset
+  trigger:
+    platform: sun
+    event: sunset
+  action:
+    service: homeassistant.turn_on
+    entity_id: group.outdoorlights
+
+- alias: Turn external lights off after sunrise
+  trigger:
+    platform: sun
+    event: sunrise
+  action:
+    service: homeassistant.turn_off
+    entity_id: group.outdoorlights
+
+
+- alias: Start heat at 6am
+  trigger:
+    - platform: time
+      at: "6:00:00"
+  action:
+    - service: climate.set_temperature
+      entity_id: climate.thermostat_heating_1
+      data:
+        temperature: 67
+
+- alias: Full heat at 7am
+  trigger:
+    - platform: time
+      at: "7:00:00"
+  action:
+    - service: climate.set_temperature
+      entity_id: climate.thermostat_heating_1
+      data:
+        temperature: 70
+
+- alias: Turn down heat at 11pm
+  trigger:
+    - platform: time
+      at: "23:00:00"
+  action:
+    - service: climate.set_temperature
+      entity_id: climate.thermostat_heating_1
+      data:
+        temperature: 63
+

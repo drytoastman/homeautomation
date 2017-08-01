@@ -1,0 +1,196 @@
+<dom-module id='ha-panel-locks'>
+    <style include='ha-style'>
+      .content {
+        padding: 24px;
+      }
+      .ha-form {
+        margin-right: 16px;
+        max-width: 500px;
+      }
+      .content td:first-child {
+        text-align: right;
+      }
+      .title {
+        @apply(--paper-font-headline);
+      }
+      .warning {
+        color: #A00;
+        font-weight: bold;
+      }
+      .batt100, .batt90, .batt80, .batt70 {
+        color: #0A0;
+      }
+      .batt60, .batt50, .batt40  {
+        color: #FC0;
+      }
+      .batt30, .batt20, .batt10  { 
+        color: #900;
+      }
+      .label {
+        position: relative;
+        left: -0.5em;
+        font-size: 0.5em;
+      }
+    </style>
+
+    <template>
+      <app-header-layout has-scrolling-region>
+        <app-header fixed>
+            <app-toolbar>
+                <ha-menu-button narrow='[[narrow]]' show-menu='[[showMenu]]'></ha-menu-button>
+                <div main-title>ZWave Locks</div>
+            </app-toolbar>
+        </app-header>
+
+        <div class='content'>
+            <table>
+            <template is='dom-repeat' items='[[locks]]' as='lock'>
+                <tr><td colspan=2 class='title'>
+                    [[lock.name]]
+                    <iron-icon class$='[[iconclass(lock.battery)]]' icon="mdi:battery[[iconlvl(lock.battery)]]" item-icon></iron-icon>
+                    <span class='label'>[[lock.battery]]%</span>
+                </td></tr>
+                <template is='dom-repeat' items='[[lock.codes]]' as='code'>
+                    <tr>
+                        <td>[[code.index]]</td>
+                        <td class$='[[code.selector]]'>[[code.label]]</td>
+                    </tr>
+                </template>
+            </template>
+            </table>
+
+            <div class='ha-form'>
+            <vaadin-combo-box label='Action' items='[[calltypes]]' value='{{thecall}}' item-label-path="label" item-value-path="call"></vaadin-combo-box>
+            <template is='dom-if' if='[[doshowoldname(thecall)]]'><paper-textarea label='Old name' value='{{oldname}}'></paper-textarea></template>
+            <template is='dom-if' if='[[doshownewname(thecall)]]'><paper-textarea label='New name' value='{{newname}}'></paper-textarea></template>
+            <template is='dom-if' if='[[doshowcode(thecall)]]'>   <paper-textarea label='Code'     value='{{code}}'>   </paper-textarea></template>
+            <paper-button on-tap='docall' raised>Execute</paper-button>
+            </div>
+        </div>
+      </app-header-layout>
+    </template>
+</dom-module>
+
+<script>
+Polymer({
+  is: 'ha-panel-locks',
+
+  properties: {
+    // things that appear in all the other panels 
+    hass:     { type: Object },
+    panel:    { type: Object },
+    narrow:   { type: Boolean, value: false },
+    showMenu: { type: Boolean, value: false },
+    locksi:   { type: Object },
+    locks:    { type: Array, computed: 'computeLocks(locksi)' },
+
+    // What can we do
+    calltypes: { type: Array, value: [
+       { label:'Assign New Code', call:'setusercode'   },
+       { label:'Delete a Code',   call:'clearusercode' },
+       { label:'Rename a Code',   call:'renameusercode'}
+    ]},
+
+    // What has the user selected/entered
+    thecall:  { type: String, value: ''},
+    oldname:  { type: String, value: ''},
+    newname:  { type: String, value: ''},
+       code:  { type: String, value: ''},
+  },
+  // End of properties
+
+  // Polymer observers definition
+  observers: [ 'onPanelUpdate(hass, panel)' ],
+
+  findzwave: function(hass, nodeid) {
+    for (var key in hass.states) {
+        if (!key.startsWith('zwave')) continue;
+        var ent = hass.states[key];
+        if (ent.attributes.node_id == nodeid) { return ent; }
+    }
+    return null;
+  },
+  
+  // Observer: polymer gaurantees that this won't be called util hass and panel are both defined
+  onPanelUpdate: function(hass, panel) {
+    this.locksi = hass.states['locksinterface.singleton'];
+  },
+
+  computeLocks: function(locksi) {
+    var ret = Array();
+    for (var nodeid in locksi.attributes.values) {
+        zwave = this.findzwave(this.hass, nodeid);
+        var dev = {name: zwave.attributes.friendly_name, battery: zwave.attributes.battery_level, codes: []};
+        for (var index in locksi.attributes.values[nodeid])
+        {
+            var label = locksi.attributes.values[nodeid][index];
+            if (label != "_unassigned") dev.codes.push({index: index, label: label, selector: (label.startsWith('_') ? 'warning': '')});
+        }
+        ret.push(dev);
+    }
+    return ret;
+  },
+
+  iconlvl: function(lvl) { 
+          if (lvl == 100) return "";
+     else if (lvl > 90)   return "-90";
+     else if (lvl > 80)   return "-80";
+     else if (lvl > 70)   return "-70";
+     else if (lvl > 60)   return "-60";
+     else if (lvl > 50)   return "-50";
+     else if (lvl > 40)   return "-40";
+     else if (lvl > 30)   return "-30";
+     else if (lvl > 20)   return "-20";
+                          return "-10"; // 19 and below
+  },
+
+  iconclass: function(lvl) { 
+          if (lvl == 100) return "batt100";
+     else if (lvl > 90)   return "batt90";
+     else if (lvl > 80)   return "batt80";
+     else if (lvl > 70)   return "batt70";
+     else if (lvl > 60)   return "batt60";
+     else if (lvl > 50)   return "batt50";
+     else if (lvl > 40)   return "batt40";
+     else if (lvl > 30)   return "batt30";
+     else if (lvl > 20)   return "batt20";
+                          return "batt10"; // 19 and below
+  },
+
+  doshowoldname: function(c) { return c == 'clearusercode' || c == 'renameusercode'; },
+  doshownewname: function(c) { return c == 'setusercode'   || c == 'renameusercode'; },
+  doshowcode:    function(c) { return c == 'setusercode'; },
+
+  docall: function () {
+
+    // get lightly checked versions of input data
+    var args = {};
+    var vo, vn, vc;
+    if ((this.oldname != '') && (this.oldname.length < 64)) { args['oldname'] = this.oldname; vo = true; }
+    if ((this.newname != '') && (this.newname.length < 64)) { args['newname'] = this.newname; vn = true; }
+    if ((this.code    != '') && (this.code.length    < 7))  { args['code']    = this.code;    vc = true; }
+
+    // Do we have the necessary args?
+    if ((this.thecall == 'renameusercode') && (!vo || !vn)) {
+        alert("Need a valid old name and new name");
+        return;
+    } else if ((this.thecall == 'setusercode') && (!vn || !vc)) {
+        alert("Need a valid name and code");
+        return;
+    } else if ((this.thecall == 'clearusercode') && !vo) {
+        alert("Need a valid name");
+        return;
+    }
+
+    this.hass.callService('locksinterface', this.thecall, args);
+  },
+
+  // load the service-panel file so we can get the necessary bits without needing to build everything
+  // TODO, figure out what the planned way of importing from a custom panel is
+  created: function() {
+      this.importHref('/static/panels/ha-panel-dev-service.html', function() {}, function() {}, true)
+  }
+
+});
+</script>
+

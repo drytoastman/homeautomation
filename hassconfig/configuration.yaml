@@ -1,0 +1,131 @@
+# Core components and setup
+homeassistant:
+  name: Home
+  latitude: 47.7396
+  longitude: -122.3426
+  elevation: 129
+  unit_system: imperial
+  time_zone: America/Los_Angeles
+  customize:
+    climate.Thermostat_Heating_1:     { friendly_name: Thermostat }
+    climate.Thermostat_Cooling_1:     { hidden: true }
+    climate.Thermostat_Heating_Econ:  { hidden: true }
+    climate.Thermostat_Cooling_Econ:  { hidden: true }
+    group.all_automations:            { emulated_hue: false }
+    group.all_locks:                  { emulated_hue: false }
+    group.all_scripts:                { emulated_hue: false }
+    group.all_switches:               { emulated_hue: false }
+    sensor.Front_Door_Alarm_Type:     { hidden: true }
+    sensor.Front_Door_Alarm_Level:    { hidden: true }
+    sensor.Back_Door_Alarm_Type:      { hidden: true }
+    sensor.Back_Door_Alarm_Level:     { hidden: true }
+    switch.Alarm:                     { emulated_hue: false }
+    switch.DoorBell:                  { emulated_hue: false }
+    switch.Warning:                   { emulated_hue: false }
+    switch.Thermostat_Switch:         { hidden: true, emulated_hue: false }
+
+logger:
+  default: warning
+  logs:
+    homeassistant.core: debug
+    custom_components: info
+
+group:
+  outdoorlights:
+    name: Outdoor Lights
+    entities:
+      - switch.Driveway_Light_Switch
+      - switch.Front_Door_Light_Switch
+
+camera:
+  - platform: zoneminder
+
+recorder: 
+    purge_days: 21
+    db_url: mysql+pymysql://ha:ha@db/ha
+
+http:
+    api_password: !secret http_password
+automation: !include automation.yaml
+alarm_control_panel: !include alarm.yaml
+frontend:
+history:
+logbook:
+sun:
+mqtt:
+ios:
+
+emulated_hue:
+  expose_by_default: true
+
+zoneminder:
+  host: zm
+  username: admin
+  password: !secret zm_password
+  path_zms: /cgi-bin/nph-zms
+
+# ZWave setup
+zwave:
+  usb_path: /dev/zwave
+  polling_interval: 60000
+  device_config:
+    sensor.Thermostat_Temperature: { polling_intensity: 1 }
+    climate.Thermostat_Heating_1:  { polling_intensity: 1 }
+
+locksinterface:
+panel_custom:
+  - name: locks
+    sidebar_title: ZWave Locks
+    sidebar_icon: mdi:lock
+  - name: alarm
+    sidebar_title: Alarm
+    sidebar_icon: mdi:security-home
+    config:
+      alarmid: alarm_control_panel.house
+
+# This is all of the I/O from my custom board
+bwio:
+  port: /dev/bwio
+
+binary_sensor:
+  - platform: bwio
+    pins: 
+       0:  [ "Little Window",      opening ]
+       1:  [ "Dining Room Window", opening ]
+       2:  [ "Pin2",               opening ] # unknown signal, always ok, where is it?
+       3:  [ "Primary Motion",     motion  ]
+       # 4: disconnected wire in the wall of the bedroom
+       5:  [ "DoorBell",           sound   ]
+       # 6: no input present
+       # 7: isn't connected, used as ground
+       8:  [ "Living Room Window", opening ]
+       9:  [ "Office Window",      opening ]
+       10: [ "Back Door",          opening ]
+       11: [ "Bedroom Slider",     opening ]
+       12: [ "Garage Door",        opening ]
+       13: [ "Patio Slider",       opening ]
+       14: [ "Front Door",         opening ]
+      # 15 isn't connected, used as ground
+#  - platform: zoneminder
+
+switch:
+  - platform: bwio
+    pins: 
+      11: "Garage Door"
+      15: Alarm
+  - platform: mqtt
+    name: "Warning"
+    command_topic: "switches/set/warning"
+    state_topic:   "switches/pub/warning"
+  - platform: mqtt
+    name: "DoorBell"
+    command_topic: "switches/set/doorbell"
+    state_topic:   "switches/pub/doorbell"
+  - platform:   gitm
+    alarm:      alarm_control_panel.house
+    bedroom:    switch.Bedroom_Light_Switch
+    downstairs: switch.Living_Room_Light_Switch
+    wakeup:     '08:00'
+    tvtime:     '17:00'
+    bedtime:    '23:00'
+

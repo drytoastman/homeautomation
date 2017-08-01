@@ -1,0 +1,61 @@
+---
+version: '3.2'
+services:
+  ha:
+    build: hass
+    volumes:
+        - "..:/config"
+    devices:
+        - "/dev/zwave:/dev/zwave"
+        - "/dev/bwio:/dev/bwio"
+    environment:
+        - AIOHTTP_NOSENDFILE=1
+    networks:
+      net1:
+    ports: 
+        - "1883:1883" # MQTT
+        - "8300:8300" # Emulated Hue
+
+  zm:
+    build: zoneminder
+    shm_size: 1024M
+    volumes:
+        - "zmdata:/var/cache/zoneminder"
+    environment:
+        - TZ=America/Los_Angeles
+    networks:
+      net1:
+
+  db:
+    image: "mariadb:10.2.7"
+    volumes: 
+        - "dbdata:/var/lib/mysql"
+        - "./dbsetup:/docker-entrypoint-initdb.d:ro"
+        - "./dbsetup:/etc/mysql/conf.d:ro"
+    environment:
+        - MYSQL_RANDOM_ROOT_PASSWORD=1
+        - TZ=America/Los_Angeles
+    networks:
+      net1:
+
+  web:
+    image: "nginx:alpine"
+    volumes: 
+        - "./nginx:/etc/nginx/conf.d:ro"
+        - "ssldata:/etc/ssl"
+    networks:
+      net1:
+    ports: 
+        - "443:443" # SSL
+
+networks:
+  net1:
+    driver: bridge
+
+volumes:
+  dbdata:
+  webdata:
+  zmdata:
+  ssldata:
+    external: true
+
