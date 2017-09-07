@@ -20,7 +20,29 @@
   action:
     service: switch.turn_off
     entity_id: switch.hot_water_switch
-    
+
+
+- alias: Door bell input (reversed)
+  trigger:
+    platform: state
+    entity_id: binary_sensor.doorbell
+    to: 'off'
+  action:
+    service: switch.turn_on
+    entity_id: switch.doorbell
+
+- alias: Door bell off
+  trigger:
+    platform: state
+    entity_id: switch.doorbell
+    to: 'on'
+    for:
+      seconds: 3
+  action:
+    service: switch.turn_off
+    entity_id: switch.doorbell
+
+
 - alias: Turn external lights on before sunset
   trigger:
     platform: sun

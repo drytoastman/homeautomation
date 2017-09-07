@@ -95,7 +95,7 @@ binary_sensor:
        2:  [ "Pin2",               opening ] # unknown signal, always ok, where is it?
        3:  [ "Primary Motion",     motion  ]
        # 4: disconnected wire in the wall of the bedroom
-       5:  [ "DoorBell",           sound   ]
+       5:  [ "DoorBell",           none ]
        # 6: no input present
        # 7: isn't connected, used as ground
        8:  [ "Living Room Window", opening ]
@@ -126,6 +126,6 @@ switch:
     bedroom:    switch.Bedroom_Light_Switch
     downstairs: switch.Living_Room_Light_Switch
     wakeup:     '08:00'
-    tvtime:     '17:00'
-    bedtime:    '23:00'
+    tvtime:     '20:00'
+    bedtime:    '22:00'
 
