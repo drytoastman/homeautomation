@@ -33,20 +33,26 @@ def on_message(client, userdata, msg):
             sounds[sound].stop()
             client.publish('switches/pub/'+sound, 'OFF')
 
-# Find out where the config files are and load our HASS api password
-with open(os.path.join(basedir, 'secrets.yaml'), 'r') as fp:
-    config = yaml.load(fp)
-    pw = config['http_password']
+while True:
+    try:
+        # Find out where the config files are and load our HASS api password
+        with open(os.path.join(basedir, 'secrets.yaml'), 'r') as fp:
+            config = yaml.load(fp)
+            pw = config['http_password']
 
-# Now load any sounds we want
-load_sound('warning', True)
-load_sound('doorbell', False)
+        # Now load any sounds we want
+        load_sound('warning', True)
+        load_sound('doorbell', False)
 
-# And start of the MQTT connection through the docker-machine
-client = mqtt.Client("sound-client")
-client.username_pw_set('homeassistant', pw)
-client.on_connect = on_connect
-client.on_message = on_message
-client.connect("192.168.99.100")
-client.loop_forever()
+        # And start of the MQTT connection through the docker-machine
+        client = mqtt.Client("sound-client")
+        client.username_pw_set('homeassistant', pw)
+        client.on_connect = on_connect
+        client.on_message = on_message
+        client.connect("192.168.99.100")
+        client.loop_forever()
+    except Exception as e:
+        print("Connection died because of " + e)
+        time.sleep(5)
+
 
